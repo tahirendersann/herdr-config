@@ -1,0 +1,4 @@
+# Herdr'in her acilista yeniden yazdigi dosyalar
+*.d.ts
+jsconfig.json
+*.bak-*
