@@ -1,4 +1,4 @@
-# Repodaki Herdr ayarlarini bu bilgisayarin Herdr klasorune kopyalar.
+﻿# Repodaki Herdr ayarlarini bu bilgisayarin Herdr klasorune kopyalar.
 # Kullanim:  .\install.ps1            (var olan dosyalarin yedegini alip uzerine yazar)
 #            .\install.ps1 -Switch    (kopyaladiktan sonra my-main layout'una gecer)
 param([switch]$Switch)
@@ -13,6 +13,8 @@ if (-not (Test-Path $herdr)) {
 
 $files = @(
     "layouts\my-main.json",
+    "layouts\my-main.svg",
+    "keys.json",
     "mods\my-spaces\main.js",
     "mods\my-spaces\mod.json"
 )

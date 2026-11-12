@@ -8,6 +8,8 @@ Buradaki dosyalar Herdr'ın kullanıcı ayar klasörüne (`~/.config/herdr-app`)
 | Dosya | Ne yapar |
 |---|---|
 | `layouts/my-main.json` | Herdr'ın `main` layout'unun kopyası. Spaces bloğu `my-spaces` mod'unu kullanır. |
+| `layouts/my-main.svg` | Settings → Look ekranında `my-main` için görünen önizleme resmi. |
+| `keys.json` | Kısayollar. Herdr'ın varsayılanlarına ek: `ctrl-shift-m` → `my-main` ile Herdr'ın `main` layout'u arasında gidip gelir. |
 | `mods/my-spaces/` | Herdr'ın `spaces` mod'unun kopyası, aşağıdaki eklemelerle. |
 
 `my-spaces` eklemeleri:
@@ -16,6 +18,11 @@ Buradaki dosyalar Herdr'ın kullanıcı ayar klasörüne (`~/.config/herdr-app`)
   kutucukta, satırın sol şeridinde ve arka plan tonunda görünür.
 - **Sekme/terminal ağacı:** her space'in altında sekmeleri ve terminalleri listelenir (program
   ikonu, başlık, agent durumu). Tıklayınca o terminale gider. Space adının solundaki ok ağacı katlar.
+- **Sekme yeniden adlandırma:** ağaçtaki sekmeye sağ tık → Rename / New tab / Close; çift tık → Rename.
+
+`keys.json` kurulduğu bilgisayardaki kısayol dosyasının yerine geçer (eskisi `.bak-<zaman>` olarak
+yedeklenir). Herdr bir kez düzenlenmiş `keys.json`'a yeni varsayılan kısayolları kendisi eklemez;
+Herdr güncellemesinden sonra yeni kısayollar gerekirse elle eklenmelidir.
 
 ## Yeni bir bilgisayara kurulum
 

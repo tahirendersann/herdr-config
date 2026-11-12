@@ -5,6 +5,7 @@
     "version": "0.1.14"
   },
   "type": "row",
+  "preview": "layouts/my-main.svg",
   "children": [
     {
       "id": "sidebar",
