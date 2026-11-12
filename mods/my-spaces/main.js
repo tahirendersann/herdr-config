@@ -425,6 +425,11 @@ export default class Spaces extends View {
         .on_click((_e, cx) => { this.picking = null; cx.notify(); }).child("✕"));
   }
 
+  // Herdr'ın kendi sekme menüsü (üstteki sekme çubuğunun sağ tıkıyla aynı).
+  tabMenu(w, tab) {
+    openOverlay({ mod: "menu", kind: "popup", width: 200, props: { tab: "tab", target: { id: tab.id, space: w.id } } });
+  }
+
   // Space'in sekmeleri ve her sekmedeki terminaller. Tek terminalli sekme tek satırdır.
   tree({ w }, t) {
     const fill = this.colorOf(w, t);
@@ -449,6 +454,9 @@ export default class Spaces extends View {
         .when(shown, (el) => el.bg(tint(fill, "26")))
         .when(!shown, (el) => el.hover((s) => s.bg(t.hover)))
         .on_click(() => go(tab, single))
+        // Çift tık: yeniden adlandır; sağ tık: sekme menüsü (Rename / New tab / Close).
+        .on_mouse_down("left", (e) => { if (e.click_count === 2) run("tab.rename", { id: tab.id }); })
+        .on_mouse_down("right", (_e, cx) => { cx.stop_propagation(); this.tabMenu(w, tab); })
         .child(line(tab.id, 0, lastTab && !(mine.length > 1)))
         .when(Boolean(single), (el) => el.child(progIcon(single.program, 13, t.muted)))
         .when(!single, (el) => el.child(svg("mods/workspace-chrome/layers.svg").size(12).flex_none().text_color(t.muted)))
@@ -464,6 +472,7 @@ export default class Spaces extends View {
           .when(shown && p.focused, (el) => el.bg(tint(fill, "1a")))
           .hover((s) => s.bg(t.hover))
           .on_click(() => go(tab, p))
+          .on_mouse_down("right", (_e, cx) => { cx.stop_propagation(); this.tabMenu(w, tab); })
           .when(!lastTab, (el) => el.child(line(p.pane, 0, false)))
           .child(line(p.pane + "-in", 1, last))
           .child(p.terminal ? progIcon(p.program, 12, t.muted) : svg("mods/workspace-chrome/layers.svg").size(12).flex_none().text_color(t.dim))
