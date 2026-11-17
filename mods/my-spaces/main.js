@@ -83,6 +83,8 @@ export default class Spaces extends View {
     this.folded = new Set(JSON.parse(localStorage.getItem("machines.folded") ?? "[]"));
     this.closedSpaces = new Set(JSON.parse(localStorage.getItem("spaces.closed") ?? "[]")); // ağacı katlanmış space'ler
     this.picking = null; // paleti açık olan space
+    this.more = null; // ⋮ menüsü: null kapalı, "menu" açık, "all" / "others" onay bekliyor
+    this.moreClosedAt = 0; // dışarı tıklamayla kapanış anı (⋮'e basınca hemen yeniden açılmasın)
     this.refreshMachines(cx);
     cx.timer.every(15000, cx => this.refreshMachines(cx));
     // `git status` walks the whole tree, on another machine a process there:
@@ -569,6 +571,57 @@ export default class Spaces extends View {
       .child(div().absolute().right(5).text_color(tone(t, w.status)).child(glyph(w.status))));
   }
 
+  // Kapanacak space'ler: hepsi ya da ekranda açık olan (aktif) hariç hepsi.
+  closeTargets(kind) {
+    return spaces().filter((s) => kind === "all" || !s.active);
+  }
+
+  // Aktif space en sona: önce diğerleri kapanır, ekran en son değişir.
+  closeSpaces(kind) {
+    const list = this.closeTargets(kind).sort((a, b) => (a.active ? 1 : 0) - (b.active ? 1 : 0));
+    for (const s of list) {
+      try { run("space.close", { id: s.id, confirmed: true }); } catch (e) { console.log(`space.close ${s.id}: ${e}`); }
+    }
+  }
+
+  toggleMore(cx) {
+    if (!this.more && Date.now() - this.moreClosedAt < 300) return; // aynı tık az önce kapattı
+    this.more = this.more ? null : "menu";
+    cx.notify();
+  }
+
+  // Başlığın altındaki ⋮ menüsü; seçimden sonra satır içi onay ister.
+  moreMenu(t) {
+    const all = this.closeTargets("all").length;
+    const others = this.closeTargets("others").length;
+    const active = spaces().find((s) => s.active);
+    const item = (id, label, count, enabled) => h_flex().id(`more-${id}`).h(28).px(8).gap(8).items_center().rounded(6)
+      .text_size(12.5).text_color(enabled ? t.foreground : t.dim)
+      .when(enabled, (el) => el.cursor_pointer().hover((s) => s.bg(t.hover)).on_click((_e, cx) => { this.more = id; cx.notify(); }))
+      .child(svg("mods/workspace-chrome/x.svg").size(12).flex_none().text_color(t.muted))
+      .child(div().flex_1().truncate().child(label))
+      .child(div().flex_none().text_size(11).text_color(t.dim).child(String(count)));
+    const panel = v_flex().id("more-menu").flex_none().mx(8).mb(6).p(4).gap(2).rounded(8).bg(t.popover).border_1().border_color(t.border)
+      .on_mouse_down_out((_e, cx) => { this.more = null; this.moreClosedAt = Date.now(); cx.notify(); });
+    if (this.more === "menu") {
+      return panel
+        .child(item("all", "Close all spaces", all, all > 0))
+        .child(item("others", "Close all spaces but this", others, others > 0));
+    }
+    const kind = this.more;
+    const count = kind === "all" ? all : others;
+    const text = kind === "all"
+      ? `${count} space kapatılacak; içindeki terminaller ve agent'lar sonlanır.`
+      : `"${active?.name ?? "?"}" dışındaki ${count} space kapatılacak; içindeki terminaller ve agent'lar sonlanır.`;
+    const button = (id, label, bg, fg, onClick) => h_flex().id(id).h(26).px(10).items_center().rounded(6).cursor_pointer()
+      .bg(bg).text_color(fg).hover((s) => s.opacity(0.85)).on_click(onClick).child(label);
+    return panel.p(8).gap(8)
+      .child(div().text_size(12).text_color(t.muted).child(text))
+      .child(h_flex().justify_end().gap(6).text_size(12)
+        .child(button("more-cancel", "Vazgeç", t.raised, t.foreground, (_e, cx) => { this.more = null; cx.notify(); }))
+        .child(button("more-confirm", "Kapat", t.blocked, "#ffffff", (_e, cx) => { this.more = null; this.closeSpaces(kind); cx.notify(); })));
+  }
+
   render() {
     const t = theme();
     const collapsed = narrow();
@@ -588,8 +641,14 @@ export default class Spaces extends View {
       .child(h_flex().h(31).pl(16).pr(10).items_center().justify_between().text_size(11.5).text_color(t.dim)
         .when(collapsed, el => el.pl(0).pr(0).justify_center())
         .when(!collapsed, el => el.child("Spaces"))
-        .child(div().id("space-new").size(26).flex_none().flex().items_center().justify_center().rounded(6).hover(s => s.bg(t.hover).text_color(t.foreground))
-          .on_click(() => run("space.new")).child(svg("mods/workspace-chrome/plus.svg").size(14))))
+        .child(h_flex().flex_none().gap(2).items_center()
+          .child(div().id("space-new").size(26).flex_none().flex().items_center().justify_center().rounded(6).hover(s => s.bg(t.hover).text_color(t.foreground))
+            .on_click(() => run("space.new")).child(svg("mods/workspace-chrome/plus.svg").size(14)))
+          .when(!collapsed, el => el.child(div().id("space-more").size(26).flex_none().flex().items_center().justify_center().rounded(6)
+            .when(Boolean(this.more), s => s.bg(t.hover).text_color(t.foreground))
+            .hover(s => s.bg(t.hover).text_color(t.foreground)).tooltip("Space işlemleri")
+            .on_click((_e, cx) => this.toggleMore(cx)).child(svg("mods/my-spaces/more-vertical.svg").size(14))))))
+      .when(Boolean(this.more) && !collapsed, el => el.child(this.moreMenu(t)))
       .child(v_flex().flex_1().min_h(0).px(collapsed ? 0 : 8).pb(14).overflow_y_scrollbar().mode("always")
         .on_mouse_up("left", (_e, cx) => { this.pressed = null; cx.notify(); })
         .children(this.grouped(t, collapsed)));

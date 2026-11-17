@@ -1,4 +1,4 @@
-﻿# Bu bilgisayarda Herdr klasorunde yapilan degisiklikleri repoya geri alir.
+# Bu bilgisayarda Herdr klasorunde yapilan degisiklikleri repoya geri alir.
 # Sonra:  git diff  ->  git commit -am "..."  ->  git push
 $ErrorActionPreference = "Stop"
 $repo = $PSScriptRoot
@@ -9,6 +9,7 @@ $files = @(
     "layouts\my-main.svg",
     "keys.json",
     "mods\my-spaces\main.js",
+    "mods\my-spaces\more-vertical.svg",
     "mods\my-spaces\mod.json"
 )
 
